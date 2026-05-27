@@ -1,0 +1,23 @@
+tags:
+  - terraform
+
+envvars:
+  - name: AWS_ACCESS_KEY_ID
+    example: AKIAXXXXXXXXXXXXXXXX
+    tags:
+      - terraform
+
+  - name: AWS_SECRET_ACCESS_KEY
+    example: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    tags:
+      - terraform
+
+  - name: AWS_DEFAULT_REGION
+    example: us-east-1
+    tags:
+      - terraform
+
+  - name: AWS_ACCOUNT_ID
+    example: XXXXXXXXXXXX
+    tags:
+      - terraform
