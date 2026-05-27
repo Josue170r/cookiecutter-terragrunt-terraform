@@ -15,13 +15,18 @@ for env in environments:
         dst = os.path.join(environments_dir, env, module)
         if os.path.isdir(src):
             shutil.copytree(src, dst)
-    print(f"[+] Ambiente '{env}' generado")
 
 shared_templates = os.path.join(templates_dir, "shared")
 if os.path.isdir(shared_templates):
     shutil.copytree(shared_templates, shared_dir, dirs_exist_ok=True)
-    print(f"[+] Shared inputs generados")
 
 shutil.rmtree(templates_dir)
-print(f"[+] _templates eliminado")
-print(f"\n✓ Proyecto '{project_name}' generado con ambientes: {', '.join(environments)}")
+
+current_dir = os.getcwd()
+parent_dir = os.path.dirname(current_dir)
+
+for item in os.listdir(current_dir):
+    shutil.move(os.path.join(current_dir, item), os.path.join(parent_dir, item))
+
+os.chdir(parent_dir)
+os.rmdir(current_dir)
