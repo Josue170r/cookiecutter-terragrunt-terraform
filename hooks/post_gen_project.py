@@ -30,3 +30,5 @@ for item in os.listdir(current_dir):
 
 os.chdir(parent_dir)
 os.rmdir(current_dir)
+
+os.system("git init")
