@@ -1,28 +1,42 @@
 inputs = {
   security_groups = {
-    "example-sg" = {
-      name        = "example-sg"
-      description = "Example security group"
+    "example-sg-tf" = {
+      description = "Security group de ejemplo"
       vpc_id      = "example-vpc"
-      ingress_rules = [
-        {
+      tags = {
+        "Name" = "example-sg-tf"
+      }
+
+      ingress = {
+        ###### Inicio sg-rule ######
+        "ssh-access" = {
           from_port   = 22
           to_port     = 22
-          protocol    = "tcp"
+          protocol    = "TCP"
           cidr_blocks = ["10.0.0.0/8"]
+          description = "SSH access"
         }
-      ]
-      egress_rules = [
-        {
+        ###### Fin sg-rule ######
+
+        ###### Inicio sg-rule ######
+        "http-access" = {
+          from_port   = 80
+          to_port     = 80
+          protocol    = "TCP"
+          cidr_blocks = ["0.0.0.0/0"]
+          description = "HTTP access"
+        }
+        ###### Fin sg-rule ######
+      }
+
+      egress = {
+        "all_outbound" = {
           from_port   = 0
           to_port     = 0
           protocol    = "-1"
           cidr_blocks = ["0.0.0.0/0"]
+          description = "Permitir todo el trafico saliente"
         }
-      ]
-      tags = {
-        Name    = "example-sg"
-        Project = "{{cookiecutter.project_name}}"
       }
     }
   }

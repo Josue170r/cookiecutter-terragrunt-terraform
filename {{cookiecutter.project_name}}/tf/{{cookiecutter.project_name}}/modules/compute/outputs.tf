@@ -29,6 +29,7 @@ output "instances" {
       subnet_id         = v.subnet_id
       instance_type     = v.instance_type
       availability_zone = v.availability_zone
+      tags              = v.tags
     }
   }
 }

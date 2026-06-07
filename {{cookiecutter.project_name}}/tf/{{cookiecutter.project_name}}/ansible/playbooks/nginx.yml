@@ -1,0 +1,32 @@
+---
+- name: Instalar y configurar nginx
+  hosts: nginx
+  become: true
+
+  tasks:
+    - name: Instalar nginx
+      ansible.builtin.package:
+        name: nginx
+        state: present
+
+    - name: Copiar página de inicio
+      ansible.builtin.copy:
+        dest: /usr/share/nginx/html/index.html
+        content: |
+          <!DOCTYPE html>
+          <html>
+            <head><title>{{ cookiecutter.project_name }}</title></head>
+            <body>
+              <h1>Hola desde {{ '{{' }} inventory_hostname {{ '}}' }}</h1>
+              <p>Desplegado con Ansible + Terraform</p>
+            </body>
+          </html>
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Iniciar y habilitar nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true

@@ -1,0 +1,28 @@
+---
+- name: Instalar y configurar Docker
+  hosts: docker
+  become: true
+
+  tasks:
+    - name: Descargar script de instalacion de Docker
+      ansible.builtin.get_url:
+        url: https://get.docker.com
+        dest: /tmp/install-docker.sh
+        mode: '0755'
+
+    - name: Ejecutar script de instalacion de Docker
+      ansible.builtin.command:
+        cmd: /tmp/install-docker.sh
+        creates: /usr/bin/docker
+
+    - name: Iniciar y habilitar Docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Agregar usuario al grupo docker
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true

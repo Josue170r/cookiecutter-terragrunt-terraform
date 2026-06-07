@@ -32,6 +32,8 @@ TG_BIN = $(CURDIR)/.terragrunt-bin/terragrunt$(TF_EXT)
 .DEFAULT_GOAL := help
 
 TF_DIR = tf/{{cookiecutter.project_name}}/environments/$(ENVIRONMENT)
+ANSIBLE_DIR = tf/{{cookiecutter.project_name}}/ansible
+PLAYBOOK ?= nginx
 export TG_TF_PATH := $(TF_BIN)
 
 .EXPORT_ALL_VARIABLES:
@@ -137,6 +139,28 @@ env-init:
 ## env-merge:		crea el archivo .env a partir de los .envs
 env-merge:
 	@$(PYTHON) merge_local_dotenvs_in_dotenv.py $(ENVIRONMENT)
+
+##ansible-install:	instala ansible
+ansible-install:
+	$(PYTHON) -m pip install ansible $(PIP_FLAGS)
+
+##ansible-inventory:	genera el inventario de Ansible agrupado por tag AnsibleGroup
+ansible-inventory:
+	@mkdir -p $(ANSIBLE_DIR)/inventory
+	@> $(ANSIBLE_DIR)/inventory/hosts.ini
+	@for dir in $(TF_DIR)/compute $(TF_DIR)/compute/mx-central-1; do \
+		(cd $$dir && "$(TG_BIN)" output -json instances 2>/dev/null | \
+		$(PYTHON) $(CURDIR)/$(ANSIBLE_DIR)/generate_inventory.py \
+		--pems-dir $(CURDIR)/$(TF_DIR)/compute/.pems \
+		--output $(CURDIR)/$(ANSIBLE_DIR)/inventory/hosts.ini) || true; \
+	done
+	@echo "Inventario generado en $(ANSIBLE_DIR)/inventory/hosts.ini"
+
+##ansible-run:		corre un playbook de Ansible contra el grupo correspondiente
+ansible-run:
+	ansible-playbook \
+		-i $(ANSIBLE_DIR)/inventory/hosts.ini \
+		$(ANSIBLE_DIR)/playbooks/$(PLAYBOOK).yml
 
 ## check-env:
 check-env:

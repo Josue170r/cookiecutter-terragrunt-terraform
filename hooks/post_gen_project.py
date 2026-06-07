@@ -10,7 +10,7 @@ environments_dir = os.path.join(tf_dir, "environments")
 shared_dir = os.path.join(tf_dir, "shared")
 
 for env in environments:
-    for module in ["compute", "rds"]:
+    for module in ["compute", "rds", "networking"]:
         src = os.path.join(templates_dir, module)
         dst = os.path.join(environments_dir, env, module)
         if os.path.isdir(src):
@@ -31,4 +31,9 @@ for item in os.listdir(current_dir):
 os.chdir(parent_dir)
 os.rmdir(current_dir)
 
+gitignore_path = os.path.join(parent_dir, ".gitignore")
+with open(gitignore_path, "a") as f:
+    f.write("\n# Ansible\n")
+    f.write("tf/**/ansible/inventory/hosts.ini\n")
+    f.write("tf/**/.pems/\n")
 os.system("git init")
