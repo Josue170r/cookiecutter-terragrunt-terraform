@@ -17,3 +17,16 @@ import {
   to       = aws_instance.ec2_instance[each.key]
   id       = each.value
 }
+
+# ──────────────────────────────────────────────
+# EBS
+# ──────────────────────────────────────────────
+
+import {
+  for_each = {
+    for flat_key, vol in local.ebs_flat : flat_key => vol.import_id
+    if vol.import_id != null
+  }
+  to = aws_ebs_volume.additional_volume[each.key]
+  id = each.value
+}

@@ -45,9 +45,15 @@ variable "instances" {
     delete_on_termination = optional(bool, false)
     root_volume_size      = optional(number, 20)
     root_volume_type      = optional(string, "gp3")
-    disable_api_stop      = optional(bool, false)
 
-    iam_instance_profile = optional(string, null)
+    disable_api_termination = optional(bool, true)
+    disable_api_stop        = optional(bool, false)
+    iam_instance_profile    = optional(string, null)
+
+    metadata_options = optional(object({
+      http_endpoint = optional(string, "enabled")
+      http_tokens   = optional(string, "required")
+    }), {})
 
     ebs_volumes = optional(map(object({
       size                  = number
@@ -57,6 +63,7 @@ variable "instances" {
       encrypted             = optional(bool, true)
       delete_on_termination = optional(bool, false)
       device_name           = string
+      import_id             = optional(string, null)
     })), {})
 
     tags = optional(map(string), {})
@@ -68,14 +75,6 @@ variable "amis" {
     source_instance_name    = string
     snapshot_without_reboot = optional(bool, false)
     tags                    = optional(map(string), {})
-  }))
-  default = {}
-}
-
-variable "key_pairs" {
-  type = map(object({
-    existing = optional(bool, false)
-    tags     = optional(map(string), {})
   }))
   default = {}
 }
