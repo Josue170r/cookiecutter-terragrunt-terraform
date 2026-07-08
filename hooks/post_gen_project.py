@@ -10,7 +10,7 @@ environments_dir = os.path.join(tf_dir, "environments")
 shared_dir = os.path.join(tf_dir, "shared")
 
 for env in environments:
-    for module in ["compute", "rds", "networking"]:
+    for module in ["compute", "rds", "networking", "amazonmq", "elasticache"]:
         src = os.path.join(templates_dir, module)
         dst = os.path.join(environments_dir, env, module)
         if os.path.isdir(src):
