@@ -29,7 +29,6 @@ output "instances" {
       subnet_id         = v.subnet_id
       instance_type     = v.instance_type
       availability_zone = v.availability_zone
-      tags              = v.tags
     }
   }
 }
@@ -65,12 +64,4 @@ output "amis" {
     arn  = v.arn
     name = v.name
   } }
-}
-
-# ──────────────────────────────────────────────
-# KeyPairs
-# ──────────────────────────────────────────────
-output "private_keys" {
-  value     = { for k, v in tls_private_key.ec2_key : k => v.private_key_pem }
-  sensitive = true
 }

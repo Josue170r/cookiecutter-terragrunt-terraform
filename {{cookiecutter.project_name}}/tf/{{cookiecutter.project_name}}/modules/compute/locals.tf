@@ -31,7 +31,7 @@ locals {
   ebs_flat = merge([
     for instance_key, instance in var.instances : {
       for vol_key, vol in instance.ebs_volumes :
-      "${instance_key}-${vol_key}" => merge(vol, {
+      "${vol_key}" => merge(vol, {
         instance_key = instance_key
       })
     }

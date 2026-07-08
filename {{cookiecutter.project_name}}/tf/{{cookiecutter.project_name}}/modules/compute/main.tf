@@ -48,7 +48,9 @@ resource "aws_instance" "ec2_instance" {
 
   private_ip                  = each.value.private_ip
   associate_public_ip_address = each.value.associate_public_ip_address
-  disable_api_stop            = each.value.disable_api_stop
+
+  disable_api_termination = each.value.disable_api_termination
+  disable_api_stop        = each.value.disable_api_stop
 
   vpc_security_group_ids = [
     for sg_name in each.value.security_group_names :
@@ -64,7 +66,13 @@ resource "aws_instance" "ec2_instance" {
   }
 
   iam_instance_profile = each.value.iam_instance_profile
-  tags                 = each.value.tags
+
+  metadata_options {
+    http_endpoint = each.value.metadata_options.http_endpoint
+    http_tokens   = each.value.metadata_options.http_tokens
+  }
+
+  tags = each.value.tags
 }
 
 # ──────────────────────────────────────────────
@@ -124,4 +132,12 @@ resource "aws_key_pair" "ec2_key_pair" {
   for_each   = { for k, v in local.key_pairs_flat : k => v if !v.existing }
   key_name   = each.key
   public_key = tls_private_key.ec2_key[each.key].public_key_openssh
+}
+
+resource "aws_ssm_parameter" "ec2_key_private" {
+  for_each = { for k, v in local.key_pairs_flat : k => v if !v.existing }
+
+  name  = "/ec2/keypairs/${each.key}/private-key"
+  type  = "SecureString"
+  value = tls_private_key.ec2_key[each.key].private_key_pem
 }
