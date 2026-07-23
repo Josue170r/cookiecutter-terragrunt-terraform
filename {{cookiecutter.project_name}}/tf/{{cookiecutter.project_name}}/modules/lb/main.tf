@@ -9,9 +9,10 @@ resource "aws_lb" "main" {
   security_groups    = each.value.security_group_ids
   subnets            = each.value.subnet_ids
 
-  enable_deletion_protection = each.value.enable_deletion_protection
-  idle_timeout               = each.value.load_balancer_type == "application" ? each.value.idle_timeout : null
-  drop_invalid_header_fields = each.value.load_balancer_type == "application" ? each.value.drop_invalid_header_fields : null
+  enable_deletion_protection       = each.value.enable_deletion_protection
+  enable_cross_zone_load_balancing = each.value.enable_cross_zone_load_balancing
+  idle_timeout                     = each.value.load_balancer_type == "application" ? each.value.idle_timeout : null
+  drop_invalid_header_fields       = each.value.load_balancer_type == "application" ? each.value.drop_invalid_header_fields : null
 
   dynamic "access_logs" {
     for_each = each.value.access_logs_bucket != null ? [1] : []

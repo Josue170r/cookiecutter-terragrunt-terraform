@@ -7,62 +7,60 @@ from pathlib import Path
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Genera inventario Ansible desde outputs de Terragrunt"
+        description="Genera inventario Ansible desde outputs de Terragrunt (conexión vía SSM)"
     )
-    parser.add_argument("--pems-dir", required=True, help="Directorio con los .pem")
-    parser.add_argument("--output",   required=True, help="Archivo de salida hosts.ini")
+    parser.add_argument("--output", required=True, help="Archivo de salida hosts.ini")
+    parser.add_argument(
+        "--region",
+        default=None,
+        help="Región AWS para la conexión SSM (si no se pasa, usa AWS_DEFAULT_REGION del entorno)",
+    )
+    parser.add_argument(
+        "--bucket-name",
+        default=None,
+        help="Bucket S3 usado por el plugin aws_ssm para transferencia de archivos (opcional)",
+    )
     return parser.parse_args()
 
 
-def build_ssh_host(name, instance, pems_dir):
-    return (
-        f"{name} "
-        f"ansible_host={instance['public_ip']} "
-        f"ansible_user=ec2-user "
-        f"ansible_ssh_private_key_file={pems_dir / f'{name}.pem'}"
-    )
-
-
-def build_ssm_host(name, instance):
+def build_ssm_host(name, instance, region, bucket_name):
     instance_id = instance["id"]
-    proxy = (
-        f"aws ssm start-session --target {instance_id} "
-        f"--document-name AWS-StartSSHSession --parameters portNumber=22"
-    )
-    return (
-        f"{name} "
-        f"ansible_host={instance_id} "
-        f"ansible_user=ec2-user "
-        f"ansible_ssh_common_args='-o ProxyCommand=\"{proxy}\"'"
-    )
+
+    fields = [
+        f"ansible_connection=aws_ssm",
+        f"ansible_aws_ssm_instance_id={instance_id}",
+        f"ansible_host={instance_id}",
+        f"ansible_user=ec2-user",
+    ]
+
+    if region:
+        fields.append(f"ansible_aws_ssm_region={region}")
+
+    if bucket_name:
+        fields.append(f"ansible_aws_ssm_bucket_name={bucket_name}")
+
+    return f"{name} " + " ".join(fields)
 
 
 def main():
-    args  = parse_args()
-    pems_dir    = Path(args.pems_dir)
+    args = parse_args()
     output_path = Path(args.output)
 
     try:
         data = json.load(sys.stdin)
     except json.JSONDecodeError:
-        sys.exit(0)  # sin output, salir silenciosamente
+        sys.exit(0)
 
     groups = defaultdict(list)
 
     for name, instance in data.items():
-        tags          = instance.get("tags", {})
+        tags = instance.get("tags", {})
         ansible_group = tags.get("AnsibleGroup")
 
         if not ansible_group:
-            continue  # instancia sin grupo, se omite
+            continue
 
-        public_ip = instance.get("public_ip")
-
-        if public_ip:
-            host_line = build_ssh_host(name, instance, pems_dir)
-        else:
-            host_line = build_ssm_host(name, instance)
-
+        host_line = build_ssm_host(name, instance, args.region, args.bucket_name)
         groups[ansible_group].append(host_line)
 
     if not groups:

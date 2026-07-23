@@ -26,16 +26,19 @@ resource "aws_db_instance" "main" {
 
   db_name  = each.value.db_name
   username = each.value.username
-  password = var.db_passwords[each.key]
   port     = each.value.port
+
+  manage_master_user_password   = each.value.manage_master_user_password
+  master_user_secret_kms_key_id = each.value.master_user_secret_kms_key_id
 
   multi_az               = each.value.multi_az
   db_subnet_group_name   = aws_db_subnet_group.main[each.key].name
   vpc_security_group_ids = each.value.vpc_security_group_ids
 
-  backup_retention_period = each.value.backup_retention_period
-  backup_window           = each.value.backup_window
-  maintenance_window      = each.value.maintenance_window
+  backup_retention_period    = each.value.backup_retention_period
+  backup_window              = each.value.backup_window
+  maintenance_window         = each.value.maintenance_window
+  auto_minor_version_upgrade = each.value.auto_minor_version_upgrade
 
   skip_final_snapshot       = each.value.skip_final_snapshot
   final_snapshot_identifier = each.value.skip_final_snapshot ? null : "${each.key}-final-snapshot"
@@ -56,8 +59,10 @@ resource "aws_rds_cluster" "main" {
 
   database_name   = each.value.db_name
   master_username = each.value.username
-  master_password = var.db_passwords[each.key]
   port            = each.value.port
+
+  manage_master_user_password   = each.value.manage_master_user_password
+  master_user_secret_kms_key_id = each.value.master_user_secret_kms_key_id
 
   db_subnet_group_name   = aws_db_subnet_group.main[each.key].name
   vpc_security_group_ids = each.value.vpc_security_group_ids
@@ -86,8 +91,9 @@ resource "aws_rds_cluster_instance" "main" {
   engine             = each.value.engine
   engine_version     = each.value.engine_version
 
-  db_subnet_group_name = aws_db_subnet_group.main[each.key].name
-  publicly_accessible  = each.value.publicly_accessible
+  db_subnet_group_name       = aws_db_subnet_group.main[each.key].name
+  publicly_accessible        = each.value.publicly_accessible
+  auto_minor_version_upgrade = each.value.auto_minor_version_upgrade
 
   tags = each.value.tags
 }

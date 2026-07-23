@@ -24,30 +24,28 @@ variable "security_groups" {
 
 variable "instances" {
   type = map(object({
-    ami               = optional(string, null)
-    ami_name          = optional(string, null)
+    ami = optional(string, null)
+
     instance_type     = string
     subnet_id         = string
     availability_zone = string
 
-    key_name = optional(object({
-      name     = optional(string, null)
-      existing = bool
-    }), null)
-
+    key_name  = optional(string, null)
     import_id = optional(string, null)
 
     private_ip                  = optional(string, null)
     associate_public_ip_address = optional(bool, null)
     security_group_names        = list(string)
 
-    ebs_optimized         = optional(bool, true)
-    delete_on_termination = optional(bool, false)
-    root_volume_size      = optional(number, 20)
-    root_volume_type      = optional(string, "gp3")
+    ebs_optimized          = optional(bool, true)
+    delete_on_termination  = optional(bool, true)
+    root_volume_size       = optional(number, 20)
+    root_volume_type       = optional(string, "gp3")
+    root_volume_encrypted  = optional(bool, false)
+    root_volume_kms_key_id = optional(string, null)
 
     disable_api_termination = optional(bool, true)
-    disable_api_stop        = optional(bool, false)
+    disable_api_stop        = optional(bool, true)
     iam_instance_profile    = optional(string, null)
 
     metadata_options = optional(object({

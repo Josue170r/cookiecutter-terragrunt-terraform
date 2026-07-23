@@ -1,0 +1,173 @@
+---
+# create_users.yml
+#
+# Uso:
+#   make ansible-run PLAYBOOK=create_users
+#
+# Antes de correrlo:
+#   1. Etiqueta la(s) instancia(s) donde se deba ejecutar con el tag:
+#        AnsibleGroup=create-user
+#      (generate_inventory.py las agrupa bajo [create-user] en hosts.ini,
+#      que es el grupo que este playbook usa como target)
+#   2. Crea ansible/vars/users.yml (NO se sube a git) con esta estructura:
+#        usuarios:
+#          - name: user.1
+#            password: AltanRedes1
+#          - name: user.2
+#            password: OtraPassword2
+#
+
+- name: Crear usuarios con llave SSH y password temporal
+  hosts: create-user-im
+  become: false
+  gather_facts: false
+  vars_files:
+    - "{{ playbook_dir }}/../vars/users.yml"
+  vars:
+    home_base: /home
+    local_output_dir: "{{ playbook_dir }}/generated"
+    ansible_remote_tmp: /tmp/.ansible-{{ inventory_hostname }}/tmp
+    ansible_aws_ssm_timeout: 180
+    ansible_python_interpreter: /usr/bin/python3
+    ansible_aws_ssm_document: AnsibleCreateUserRootSession
+
+  tasks:
+    - name: Abortar si el grupo create-user está vacío (ninguna instancia con el tag)
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | length > 0
+        fail_msg: >-
+          No hay instancias en el grupo 'create-user'. Verifica que la
+          instancia tenga el tag AnsibleGroup=create-user y que el
+          inventario se haya regenerado (make ansible-inventory).
+      run_once: true
+
+    - name: Abortar si no hay usuarios definidos en vars/users.yml
+      ansible.builtin.assert:
+        that:
+          - usuarios is defined
+          - usuarios | length > 0
+        fail_msg: >-
+          Define la lista 'usuarios' en {{ playbook_dir }}/../vars/users.yml
+      run_once: true
+
+    - name: Crear carpeta local de salida
+      become: false
+      delegate_to: localhost
+      run_once: true
+      ansible.builtin.file:
+        path: "{{ local_output_dir }}"
+        state: directory
+        mode: "0700"
+
+    - name: Crear usuario con home en /home/<usuario>
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        home: "{{ home_base }}/{{ item.name }}"
+        create_home: true
+        shell: /bin/bash
+        state: present
+      loop: "{{ usuarios }}"
+
+    - name: Verificar si ya existe la llave final .pem por usuario
+      become: false
+      delegate_to: localhost
+      run_once: true
+      ansible.builtin.stat:
+        path: "{{ local_output_dir }}/{{ item.name }}.pem"
+      loop: "{{ usuarios }}"
+      register: pem_stat
+
+    - name: Generar par de llaves RSA (PEM) localmente, solo si no existen ya
+      become: false
+      delegate_to: localhost
+      run_once: true
+      community.crypto.openssh_keypair:
+        path: "{{ local_output_dir }}/{{ item.item.name }}"
+        type: ecdsa
+        size: 521
+        backend: cryptography
+        comment: "{{ item.item.name }}@altan-managed"
+        mode: "0600"
+      loop: "{{ pem_stat.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      when: not item.stat.exists
+      register: generated_keys
+
+    - name: Renombrar la llave privada a extensión .pem
+      become: false
+      delegate_to: localhost
+      run_once: true
+      ansible.builtin.command: >-
+        mv "{{ local_output_dir }}/{{ item.item.name }}"
+          "{{ local_output_dir }}/{{ item.item.name }}.pem"
+      loop: "{{ pem_stat.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      when: not item.stat.exists
+
+    - name: Crear directorio .ssh del usuario
+      ansible.builtin.file:
+        path: "{{ home_base }}/{{ item.name }}/.ssh"
+        state: directory
+        owner: "{{ item.name }}"
+        group: "{{ item.name }}"
+        mode: "0700"
+      loop: "{{ usuarios }}"
+
+    - name: Instalar la llave pública en authorized_keys
+      ansible.posix.authorized_key:
+        user: "{{ item.name }}"
+        key: "{{ lookup('file', local_output_dir + '/' + item.name + '.pub') }}"
+        exclusive: true
+        state: present
+      loop: "{{ usuarios }}"
+
+    - name: Asegurar permisos correctos de authorized_keys
+      ansible.builtin.file:
+        path: "{{ home_base }}/{{ item.name }}/.ssh/authorized_keys"
+        owner: "{{ item.name }}"
+        group: "{{ item.name }}"
+        mode: "0600"
+      loop: "{{ usuarios }}"
+
+    - name: Asignar password al usuario (desde vars/users.yml)
+      ansible.builtin.user:
+        name: "{{ item.item.name }}"
+        password: "{{ item.item.password | password_hash('sha512') }}"
+      loop: "{{ pem_stat.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      when: not item.stat.exists
+      no_log: true
+
+    - name: Forzar cambio de password en el primer login
+      ansible.builtin.command: "chage -d 0 {{ item.item.name }}"
+      loop: "{{ pem_stat.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      when: not item.stat.exists
+      changed_when: true
+
+    - name: Quitar al usuario de los grupos (sudo/wheel), si pertenece
+      ansible.builtin.command: "gpasswd -d {{ item.0.name }} {{ item.1 }}"
+      loop: "{{ usuarios | product(['sudo', 'wheel']) | list }}"
+      loop_control:
+        label: "{{ item.0.name }} / {{ item.1 }}"
+      register: remove_admin_group
+      failed_when:
+        - remove_admin_group.rc != 0
+        - "'is not a member' not in remove_admin_group.stderr"
+        - "'does not exist' not in remove_admin_group.stderr"
+      changed_when: remove_admin_group.rc == 0
+
+    - name: Summary
+      become: false
+      delegate_to: localhost
+      run_once: true
+      ansible.builtin.debug:
+        msg: >-
+          Usuario {{ item.name }} creado (misma llave/password en todas las
+          instancias del grupo). Llave privada: {{ local_output_dir }}/{{ item.name }}.pem
+      loop: "{{ usuarios }}"

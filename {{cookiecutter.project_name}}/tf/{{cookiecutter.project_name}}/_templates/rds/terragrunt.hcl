@@ -37,7 +37,4 @@ inputs = {
       ]
     })
   }
-  db_passwords = {
-    for k, db in local.all_rds_config : k => get_env(db.password_env_var)
-  }
 }

@@ -36,12 +36,4 @@ locals {
       })
     }
   ]...)
-
-  key_pairs_flat = {
-    for name, kps in {
-      for instance_key, instance in var.instances :
-      instance.key_name.name => instance.key_name...
-      if instance.key_name != null
-    } : name => kps[0]
-  }
 }

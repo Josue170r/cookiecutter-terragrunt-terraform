@@ -5,9 +5,10 @@ variable "load_balancers" {
     subnet_ids         = list(string)
     security_group_ids = optional(list(string), [])
 
-    enable_deletion_protection = optional(bool, false)
-    idle_timeout               = optional(number, 60)
-    drop_invalid_header_fields = optional(bool, true)
+    enable_deletion_protection       = optional(bool, false)
+    enable_cross_zone_load_balancing = optional(bool, true)
+    idle_timeout                     = optional(number, 60)
+    drop_invalid_header_fields       = optional(bool, true)
 
     access_logs_bucket = optional(string, null)
     access_logs_prefix = optional(string, null)
@@ -47,7 +48,7 @@ variable "load_balancers" {
 
       attachments = optional(map(object({
         target_id         = optional(string, null)
-        instance_key      = optional(string, null)
+        instance_name     = optional(string, null)
         port              = optional(number, null)
         availability_zone = optional(string, null)
       })), {})
