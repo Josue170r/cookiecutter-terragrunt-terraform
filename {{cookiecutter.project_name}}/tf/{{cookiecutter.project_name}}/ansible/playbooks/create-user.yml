@@ -135,7 +135,7 @@
     - name: Asignar password al usuario (desde vars/users.yml)
       ansible.builtin.user:
         name: "{{ item.item.name }}"
-        password: "{{ item.item.password | password_hash('sha512') }}"
+        password: "{{ item.item.password | string }}"
       loop: "{{ pem_stat.results }}"
       loop_control:
         label: "{{ item.item.name }}"
