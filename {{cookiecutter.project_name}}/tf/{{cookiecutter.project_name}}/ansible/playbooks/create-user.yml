@@ -22,11 +22,11 @@
   become: false
   gather_facts: false
   vars_files:
-    - "{% raw %}{{ playbook_dir }}{% endraw %}/../vars/users.yml"
+    - "{% raw %}{{ playbook_dir }}/../vars/users.yml{% endraw %}"
   vars:
     home_base: /home
-    local_output_dir: "{% raw %}{{ playbook_dir }}{% endraw %}/generated"
-    ansible_remote_tmp: /tmp/.ansible-{{ inventory_hostname }}/tmp
+    local_output_dir: "{% raw %}{{ playbook_dir }}/generated{% endraw %}"
+    ansible_remote_tmp: "{% raw %}/tmp/.ansible-{{ inventory_hostname }}/tmp{% endraw %}"
     ansible_aws_ssm_timeout: 180
     ansible_python_interpreter: /usr/bin/python3
     ansible_aws_ssm_document: AnsibleCreateUserRootSession
@@ -35,7 +35,7 @@
     - name: Abortar si el grupo create-user está vacío (ninguna instancia con el tag)
       ansible.builtin.assert:
         that:
-          - ansible_play_hosts_all | length > 0
+          - "{% raw %}ansible_play_hosts_all | length > 0{% endraw %}"
         fail_msg: >-
           No hay instancias en el grupo 'create-user'. Verifica que la
           instancia tenga el tag AnsibleGroup=create-user y que el
@@ -45,10 +45,10 @@
     - name: Abortar si no hay usuarios definidos en vars/users.yml
       ansible.builtin.assert:
         that:
-          - usuarios is defined
-          - usuarios | length > 0
+          - "{% raw %}usuarios is defined{% endraw %}"
+          - "{% raw %}usuarios | length > 0{% endraw %}"
         fail_msg: >-
-          Define la lista 'usuarios' en {% raw %}{{ playbook_dir }}{% endraw %}/../vars/users.yml
+          Define la lista 'usuarios' en {% raw %}{{ playbook_dir }}/../vars/users.yml{% endraw %}
       run_once: true
 
     - name: Crear carpeta local de salida
@@ -56,26 +56,26 @@
       delegate_to: localhost
       run_once: true
       ansible.builtin.file:
-        path: "{{ local_output_dir }}"
+        path: "{% raw %}{{ local_output_dir }}{% endraw %}"
         state: directory
         mode: "0700"
 
     - name: Crear usuario con home en /home/<usuario>
       ansible.builtin.user:
-        name: "{{ item.name }}"
-        home: "{{ home_base }}/{{ item.name }}"
+        name: "{% raw %}{{ item.name }}{% endraw %}"
+        home: "{% raw %}{{ home_base }}/{{ item.name }}{% endraw %}"
         create_home: true
         shell: /bin/bash
         state: present
-      loop: "{{ usuarios }}"
+      loop: "{% raw %}{{ usuarios }}{% endraw %}"
 
     - name: Verificar si ya existe la llave final .pem por usuario
       become: false
       delegate_to: localhost
       run_once: true
       ansible.builtin.stat:
-        path: "{{ local_output_dir }}/{{ item.name }}.pem"
-      loop: "{{ usuarios }}"
+        path: "{% raw %}{{ local_output_dir }}/{{ item.name }}.pem{% endraw %}"
+      loop: "{% raw %}{{ usuarios }}{% endraw %}"
       register: pem_stat
 
     - name: Generar par de llaves RSA (PEM) localmente, solo si no existen ya
@@ -83,16 +83,16 @@
       delegate_to: localhost
       run_once: true
       community.crypto.openssh_keypair:
-        path: "{{ local_output_dir }}/{{ item.item.name }}"
+        path: "{% raw %}{{ local_output_dir }}/{{ item.item.name }}{% endraw %}"
         type: ecdsa
         size: 521
         backend: cryptography
-        comment: "{{ item.item.name }}@altan-managed"
+        comment: "{% raw %}{{ item.item.name }}@altan-managed{% endraw %}"
         mode: "0600"
-      loop: "{{ pem_stat.results }}"
+      loop: "{% raw %}{{ pem_stat.results }}{% endraw %}"
       loop_control:
-        label: "{{ item.item.name }}"
-      when: not item.stat.exists
+        label: "{% raw %}{{ item.item.name }}{% endraw %}"
+      when: "{% raw %}not item.stat.exists{% endraw %}"
       register: generated_keys
 
     - name: Renombrar la llave privada a extensión .pem
@@ -100,67 +100,67 @@
       delegate_to: localhost
       run_once: true
       ansible.builtin.command: >-
-        mv "{{ local_output_dir }}/{{ item.item.name }}"
-          "{{ local_output_dir }}/{{ item.item.name }}.pem"
-      loop: "{{ pem_stat.results }}"
+        mv "{% raw %}{{ local_output_dir }}/{{ item.item.name }}{% endraw %}"
+          "{% raw %}{{ local_output_dir }}/{{ item.item.name }}.pem{% endraw %}"
+      loop: "{% raw %}{{ pem_stat.results }}{% endraw %}"
       loop_control:
-        label: "{{ item.item.name }}"
-      when: not item.stat.exists
+        label: "{% raw %}{{ item.item.name }}{% endraw %}"
+      when: "{% raw %}not item.stat.exists{% endraw %}"
 
     - name: Crear directorio .ssh del usuario
       ansible.builtin.file:
-        path: "{{ home_base }}/{{ item.name }}/.ssh"
+        path: "{% raw %}{{ home_base }}/{{ item.name }}/.ssh{% endraw %}"
         state: directory
-        owner: "{{ item.name }}"
-        group: "{{ item.name }}"
+        owner: "{% raw %}{{ item.name }}{% endraw %}"
+        group: "{% raw %}{{ item.name }}{% endraw %}"
         mode: "0700"
-      loop: "{{ usuarios }}"
+      loop: "{% raw %}{{ usuarios }}{% endraw %}"
 
     - name: Instalar la llave pública en authorized_keys
       ansible.posix.authorized_key:
-        user: "{{ item.name }}"
-        key: "{{ lookup('file', local_output_dir + '/' + item.name + '.pub') }}"
+        user: "{% raw %}{{ item.name }}{% endraw %}"
+        key: "{% raw %}{{ lookup('file', local_output_dir + '/' + item.name + '.pub') }}{% endraw %}"
         exclusive: true
         state: present
-      loop: "{{ usuarios }}"
+      loop: "{% raw %}{{ usuarios }}{% endraw %}"
 
     - name: Asegurar permisos correctos de authorized_keys
       ansible.builtin.file:
-        path: "{{ home_base }}/{{ item.name }}/.ssh/authorized_keys"
-        owner: "{{ item.name }}"
-        group: "{{ item.name }}"
+        path: "{% raw %}{{ home_base }}/{{ item.name }}/.ssh/authorized_keys{% endraw %}"
+        owner: "{% raw %}{{ item.name }}{% endraw %}"
+        group: "{% raw %}{{ item.name }}{% endraw %}"
         mode: "0600"
-      loop: "{{ usuarios }}"
+      loop: "{% raw %}{{ usuarios }}{% endraw %}"
 
     - name: Asignar password al usuario (desde vars/users.yml)
       ansible.builtin.user:
-        name: "{{ item.item.name }}"
-        password: "{{ item.item.password | string }}"
-      loop: "{{ pem_stat.results }}"
+        name: "{% raw %}{{ item.item.name }}{% endraw %}"
+        password: "{% raw %}{{ item.item.password | string }}{% endraw %}"
+      loop: "{% raw %}{{ pem_stat.results }}{% endraw %}"
       loop_control:
-        label: "{{ item.item.name }}"
-      when: not item.stat.exists
+        label: "{% raw %}{{ item.item.name }}{% endraw %}"
+      when: "{% raw %}not item.stat.exists{% endraw %}"
       no_log: true
 
     - name: Forzar cambio de password en el primer login
-      ansible.builtin.command: "chage -d 0 {{ item.item.name }}"
-      loop: "{{ pem_stat.results }}"
+      ansible.builtin.command: "{% raw %}chage -d 0 {{ item.item.name }}{% endraw %}"
+      loop: "{% raw %}{{ pem_stat.results }}{% endraw %}"
       loop_control:
-        label: "{{ item.item.name }}"
-      when: not item.stat.exists
+        label: "{% raw %}{{ item.item.name }}{% endraw %}"
+      when: "{% raw %}not item.stat.exists{% endraw %}"
       changed_when: true
 
     - name: Quitar al usuario de los grupos (sudo/wheel), si pertenece
-      ansible.builtin.command: "gpasswd -d {{ item.0.name }} {{ item.1 }}"
-      loop: "{{ usuarios }}"
+      ansible.builtin.command: "{% raw %}gpasswd -d {{ item.0.name }} {{ item.1 }}{% endraw %}"
+      loop: "{% raw %}{{ usuarios }}{% endraw %}"
       loop_control:
-        label: "{{ item.0.name }} / {{ item.1 }}"
+        label: "{% raw %}{{ item.0.name }} / {{ item.1 }}{% endraw %}"
       register: remove_admin_group
       failed_when:
-        - remove_admin_group.rc != 0
-        - "'is not a member' not in remove_admin_group.stderr"
-        - "'does not exist' not in remove_admin_group.stderr"
-      changed_when: remove_admin_group.rc == 0
+        - "{% raw %}remove_admin_group.rc != 0{% endraw %}"
+        - "{% raw %}'is not a member' not in remove_admin_group.stderr{% endraw %}"
+        - "{% raw %}'does not exist' not in remove_admin_group.stderr{% endraw %}"
+      changed_when: "{% raw %}remove_admin_group.rc == 0{% endraw %}"
 
     - name: Summary
       become: false
@@ -168,6 +168,6 @@
       run_once: true
       ansible.builtin.debug:
         msg: >-
-          Usuario {{ item.name }} creado (misma llave/password en todas las
-          instancias del grupo). Llave privada: {{ local_output_dir }}/{{ item.name }}.pem
-      loop: "{{ usuarios }}"
+          Usuario {% raw %}{{ item.name }}{% endraw %} creado (misma llave/password en todas las
+          instancias del grupo). Llave privada: {% raw %}{{ local_output_dir }}/{{ item.name }}.pem{% endraw %}
+      loop: "{% raw %}{{ usuarios }}{% endraw %}"
