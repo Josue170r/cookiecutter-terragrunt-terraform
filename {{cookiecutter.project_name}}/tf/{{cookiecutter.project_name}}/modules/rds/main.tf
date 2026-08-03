@@ -26,9 +26,10 @@ resource "aws_db_instance" "main" {
 
   db_name  = each.value.db_name
   username = each.value.username
+  password = each.value.manage_master_user_password ? null : each.value.password
   port     = each.value.port
 
-  manage_master_user_password   = each.value.manage_master_user_password
+  manage_master_user_password   = each.value.manage_master_user_password ? each.value.manage_master_user_password : null
   master_user_secret_kms_key_id = each.value.master_user_secret_kms_key_id
 
   multi_az               = each.value.multi_az
@@ -59,9 +60,10 @@ resource "aws_rds_cluster" "main" {
 
   database_name   = each.value.db_name
   master_username = each.value.username
+  master_password = each.value.manage_master_user_password ? null : each.value.password
   port            = each.value.port
 
-  manage_master_user_password   = each.value.manage_master_user_password
+  manage_master_user_password   = each.value.manage_master_user_password ? each.value.manage_master_user_password : null
   master_user_secret_kms_key_id = each.value.master_user_secret_kms_key_id
 
   db_subnet_group_name   = aws_db_subnet_group.main[each.key].name

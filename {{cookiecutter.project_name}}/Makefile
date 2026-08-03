@@ -46,6 +46,7 @@ pre-commit:
 ##lint pre-commit lint
 lint: fmt
 	@$(PYTHON) -m pre_commit run --all-files
+	@$(PYTHON) -m pre_commit run gitleaks --all-files
 
 ##check-tf-version   descargar terraform de manera local
 check-tf-version:

@@ -47,6 +47,8 @@ variable "instances" {
     disable_api_termination = optional(bool, true)
     disable_api_stop        = optional(bool, true)
     iam_instance_profile    = optional(string, null)
+    
+    user_data_file = optional(string, null)
 
     metadata_options = optional(object({
       http_endpoint = optional(string, "enabled")

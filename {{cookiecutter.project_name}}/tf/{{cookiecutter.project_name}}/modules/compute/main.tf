@@ -70,6 +70,8 @@ resource "aws_instance" "ec2_instance" {
   }
 
   iam_instance_profile = each.value.iam_instance_profile
+  
+  user_data = try(each.value.user_data_file, null) != null ? file(each.value.user_data_file) : null
 
   metadata_options {
     http_endpoint = each.value.metadata_options.http_endpoint

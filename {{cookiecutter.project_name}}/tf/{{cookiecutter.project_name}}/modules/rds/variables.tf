@@ -15,9 +15,10 @@ variable "db_instances" {
 
     db_name  = optional(string, null)
     username = string
+    password = optional(string, null)
     port     = optional(number, null)
 
-    manage_master_user_password   = optional(bool, true)
+    manage_master_user_password   = optional(bool, false)
     master_user_secret_kms_key_id = optional(string, null)
 
     multi_az               = optional(bool, false)

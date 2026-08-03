@@ -50,6 +50,10 @@ resource "aws_route_table" "managed" {
       nat_gateway_id = route.value.nat_gateway_id != null ? aws_nat_gateway.this[route.value.nat_gateway_id].id : null
     }
   }
+
+  lifecycle {
+    ignore_changes = [route]
+  }
 }
 
 # Imported from AWS Current Infraestructure
@@ -60,7 +64,7 @@ resource "aws_route_table" "imported" {
   tags   = each.value.tags
 
   lifecycle {
-    ignore_changes = [route, propagating_vgws, tags]
+    ignore_changes = [route, propagating_vgws]
   }
 }
 
