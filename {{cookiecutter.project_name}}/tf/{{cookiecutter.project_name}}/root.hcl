@@ -35,6 +35,7 @@ remote_state {
     region       = "${get_env("AWS_DEFAULT_REGION")}"
     encrypt      = true
     use_lockfile = true
+    profile      = get_env("BACKEND_AWS_PROFILE")
   }
   generate = {
     path      = "backend.tf"

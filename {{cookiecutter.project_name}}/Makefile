@@ -64,8 +64,12 @@ ifeq ($(UNAME_S),Linux)
 endif
 	@$(TG_BIN) --version
 
-##install Instala ambas versiones de terraform y terragrunt
-install: check-tf-version check-tg-version
+##install Instala ambas versiones de terraform y terragrunt y crea el bucket de backend
+install: check-tf-version check-tg-version create-backend-bucket
+
+## create-backend-bucket:	Crea el bucket S3 para el backend de Terraform
+create-backend-bucket:
+	@$(PYTHON) create_backend_bucket.py $(ENVIRONMENT)
 
 ## init:			terraform init
 init:

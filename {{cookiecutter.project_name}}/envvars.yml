@@ -2,18 +2,18 @@ tags:
   - terraform
 
 envvars:
-  - name: AWS_ACCESS_KEY_ID
-    example: AKIAXXXXXXXXXXXXXXXX
-    tags:
-      - terraform
-
-  - name: AWS_SECRET_ACCESS_KEY
-    example: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  - name: AWS_PROFILE
+    example: profile
     tags:
       - terraform
 
   - name: AWS_DEFAULT_REGION
-    example: us-east-1
+    example: mx-central-1
+    tags:
+      - terraform
+
+  - name: BACKEND_AWS_PROFILE
+    example: profile
     tags:
       - terraform
 
