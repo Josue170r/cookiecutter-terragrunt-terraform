@@ -1,10 +1,11 @@
 variable "vpcs" {
   type = map(object({
-    cidr_block           = string
-    import_id            = optional(string, null)
-    enable_dns_support   = optional(bool, true)
-    enable_dns_hostnames = optional(bool, true)
-    tags                 = optional(map(string), {})
+    cidr_block            = string
+    import_id             = optional(string, null)
+    enable_dns_support    = optional(bool, true)
+    enable_dns_hostnames  = optional(bool, true)
+    tags                  = optional(map(string), {})
+    secondary_cidr_blocks = optional(list(string), [])
     subnets = map(object({
       cidr_block        = string
       availability_zone = string

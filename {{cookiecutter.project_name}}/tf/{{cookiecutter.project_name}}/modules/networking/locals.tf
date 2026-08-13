@@ -12,6 +12,16 @@ locals {
     }
   ]...)
 
+  secondary_cidrs = merge([
+    for vpc_name, vpc in var.vpcs : {
+      for cidr in vpc.secondary_cidr_blocks :
+      "${vpc_name}-${cidr}" => {
+        vpc_name   = vpc_name
+        cidr_block = cidr
+      }
+    }
+  ]...)
+
   internet_gateways = merge([
     for vpc_name, vpc in var.vpcs : {
       for igw_name, igw in vpc.internet_gateways :

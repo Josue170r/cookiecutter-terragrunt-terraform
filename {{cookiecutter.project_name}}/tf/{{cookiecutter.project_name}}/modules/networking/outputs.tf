@@ -20,8 +20,16 @@ output "subnets" {
   }
 }
 
+output "subnet_arns" {
+  value = { for k, v in aws_subnet.this : k => v.arn }
+}
+
 output "vpc_ids" {
   value = { for k, v in aws_vpc.this : k => v.id }
+}
+
+output "nat_gateway_eip_ids" {
+  value = { for k, v in aws_eip.nat : k => v.allocation_id }
 }
 
 output "subnet_ids" {
